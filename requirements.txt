@@ -1,0 +1,4 @@
+brew install sqlcipher
+pip3 install pysqlcipher3 --user
+pip install click
+pip install pytest
