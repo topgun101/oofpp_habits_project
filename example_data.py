@@ -34,36 +34,32 @@ def add_example_completions(db, habit_id, periodicity):
 
 def add_test_example_completions(db, habit_id, periodicity):
     """
-    Adds completion data for a habit over a period of 4 weeks with a fixed pattern.
+    Adds completion data for a habit over a period with fixed dates.
 
-    For daily habits, this will create a pattern where the habit is completed 6 days out of 7,
-    ensuring a specific day (like the 7th day) is skipped.
-    For weekly habits, it will add completions every other week to ensure some weeks are missed.
+    For daily habits, completes each day except specific days to simulate missed completions.
+    For weekly habits, completes every other week, leaving a 2-week gap to mark as broken.
     """
     cursor = db.cursor()
-    today = datetime.now().date()
+    today = (datetime.now() - timedelta(days=2)).date()  # Set the latest possible completion date to 2 days ago
 
     if periodicity == 'daily':
-        # For daily habits, skip every 7th day to simulate a missed day
-        for day in range(28):  # 4 weeks
+        # Complete every day except certain days, and stop 2 days before today
+        for day in range(0, 28):
             completion_date = today - timedelta(days=day)
-            if day % 7 != 0:  # Complete every day except the 7th day
+            if day not in {7, 14, 21}:  # Skip specific days to break the streak
                 cursor.execute(
                     'INSERT INTO completions (habit_id, completed_at) VALUES (?, ?)',
                     (habit_id, completion_date)
                 )
 
     elif periodicity == 'weekly':
-        # For weekly habits, complete every other week
-        for week in range(4):
-            if week % 2 == 0:  # Complete every second week
-                completion_date = today - timedelta(weeks=week)
-                cursor.execute(
-                    'INSERT INTO completions (habit_id, completed_at) VALUES (?, ?)',
-                    (habit_id, completion_date)
-                )
-
-    db.commit()
+        # Complete every other week to ensure a two-week gap and stop at least one week before today
+        for week in range(2, 8, 2):  # Avoid completing on the most recent week
+            completion_date = today - timedelta(weeks=week)
+            cursor.execute(
+                'INSERT INTO completions (habit_id, completed_at) VALUES (?, ?)',
+                (habit_id, completion_date)
+            )
 
 def add_example_habits(db, test_data=False):
     """Adds 5 predefined example habits and related completion data."""
@@ -101,7 +97,6 @@ def add_example_habits(db, test_data=False):
             INSERT INTO habits (name, description, periodicity, created_at)
             VALUES (?, ?, ?, ?)
         ''', (habit["name"], habit["description"], habit["periodicity"], datetime.now()))
-        print(f"Added habit: {habit['name']}")  # Debugging output
 
         habit_id = cursor.lastrowid
 

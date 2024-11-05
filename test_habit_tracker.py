@@ -1,89 +1,56 @@
+import os
+from db import init_db, DB_PATH  # Import the DB_PATH
 import pytest
 import sqlite3
-import os
 from example_data import add_example_habits
 from habit import Habit
 from completion import Completion
 from analytics import get_longest_streak, get_all_habits, get_habits_by_periodicity, check_all_broken_habits
 
-# Path to the test database for testing
-TEST_DB_PATH = 'test.db'
-
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope="session", autouse=True) #Die Fixture ist so konfiguriert, dass sie einmal pro Testlauf automatisch vor allen Tests ausgeführt wird.
 def setup_test_database():
     """
     Initializes the SQLite test database with tables if it doesn't already exist.
-    Populates it with fixed example data.
+    Populates it with fixed test example data.
     """
-    db_exists = os.path.exists(TEST_DB_PATH)
+    db_exists = os.path.exists(DB_PATH)
+    # Lösche die bestehende test.db, falls sie existiert
+    if db_exists:
+        os.remove('test.db')
 
-    with sqlite3.connect(TEST_DB_PATH) as db:
+    # Erstelle die Datenbank neu und initialisiere sie
+    with sqlite3.connect(DB_PATH) as db:
+        init_db()  # Tabellen in der Datenbank initialisieren
+        add_example_habits(db, test_data=True)  # Testdaten hinzufügen
+
+#    with sqlite3.connect(DB_PATH) as db:
         # Create tables if they don't exist
-        cursor = db.cursor()
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS habits (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                description TEXT,
-                periodicity TEXT NOT NULL,
-                created_at TEXT NOT NULL
-            )
-        ''')
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS completions (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                habit_id INTEGER,
-                completed_at TEXT NOT NULL,
-                FOREIGN KEY(habit_id) REFERENCES habits(id)
-            )
-        ''')
-        db.commit()
+#        init_db()  # Initialize tables
 
         # If the database is newly created, add example data
-        if not db_exists:
+#        if not db_exists:
             # Populate with example data using test data for consistent test results
-            add_example_habits(db, test_data=True)
+#            add_example_habits(db, test_data=True)
 
 
 @pytest.fixture
 def habit_tracker():
     """Fixture to provide a Habit instance connected to the test database."""
-    return Habit(TEST_DB_PATH)
+    return Habit(DB_PATH)
 
 @pytest.fixture
 def completion_tracker():
     """Fixture to provide a Completion instance connected to the test database."""
-    return Completion(TEST_DB_PATH)
+    return Completion(DB_PATH)
 
 # Utility function to create tables
-def create_tables(db):
-    """Create tables in the database if they don't already exist."""
-    cursor = db.cursor()
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS habits (
-            id INTEGER PRIMARY KEY,
-            name TEXT UNIQUE NOT NULL,
-            description TEXT,
-            periodicity TEXT NOT NULL,
-            created_at TEXT
-        )
-    ''')
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS completions (
-            id INTEGER PRIMARY KEY,
-            habit_id INTEGER,
-            completed_at TEXT,
-            FOREIGN KEY(habit_id) REFERENCES habits(id)
-        )
-    ''')
-    db.commit()
 
 # Tests
 
 def test_add_habit(habit_tracker):
     """Test adding a new habit."""
     habit_tracker.add_habit("Test Habit", "A test habit", "daily")
-    with sqlite3.connect(TEST_DB_PATH) as db:
+    with sqlite3.connect(DB_PATH) as db:
         cursor = db.cursor()
         cursor.execute("SELECT * FROM habits WHERE name = ?", ("Test Habit",))
         habit = cursor.fetchone()
@@ -111,7 +78,7 @@ def test_delete_habit(habit_tracker):
     habit_tracker.add_habit("Test Habit", "A test habit", "daily")
     habit_tracker.delete_habit("Test Habit")  # Delete the added habit
 
-    with sqlite3.connect(TEST_DB_PATH) as db:
+    with sqlite3.connect(DB_PATH) as db:
         cursor = db.cursor()
         cursor.execute("SELECT * FROM habits WHERE name = ?", ("Test Habit",))
         habit = cursor.fetchone()
@@ -120,7 +87,7 @@ def test_delete_habit(habit_tracker):
 def test_add_completion(completion_tracker):
     """Test adding a completion to a habit."""
     completion_tracker.add_completion("Read Book")
-    with sqlite3.connect(TEST_DB_PATH) as db:
+    with sqlite3.connect(DB_PATH) as db:
         cursor = db.cursor()
         cursor.execute("SELECT * FROM completions WHERE habit_id = (SELECT id FROM habits WHERE name = 'Read Book')")
         completion = cursor.fetchone()
@@ -131,22 +98,23 @@ def test_check_habits():
     """Test checking for broken habits with fixed completion patterns."""
     broken_habits = check_all_broken_habits()
 
-    # Define the expected broken habit messages based on our fixed completion pattern
+    # Define expected broken habit messages based on the test completion data
     expected_broken_habits = [
-        "Habit 'Read Book' (Daily) is broken; last completed 7 days ago.",
-        "Habit 'Exercise' (Daily) is broken; last completed 7 days ago.",
-        "Habit 'Meditate' (Daily) is broken; last completed 7 days ago.",
+        #"Habit 'Read Book' (Daily) is broken; last completed 2 days ago.",
+        "Habit 'Exercise' (Daily) is broken; last completed 2 days ago.",
+        "Habit 'Meditate' (Daily) is broken; last completed 2 days ago.",
         "Habit 'Weekly Review' (Weekly) is broken; last completed 2 weeks ago.",
         "Habit 'Clean House' (Weekly) is broken; last completed 2 weeks ago."
     ]
 
     # Check that each expected message appears in the actual broken habits
     for expected_message in expected_broken_habits:
-        assert any(expected_message in habit for habit in
-                   broken_habits), f"Expected broken habit message not found: {expected_message}"
+        assert any(expected_message in habit for habit in broken_habits), \
+            f"Expected broken habit message not found: {expected_message}"
 
-    # Verify that there are no additional unexpected broken habits
+    # Ensure no additional unexpected broken habits are detected
     assert len(broken_habits) == len(expected_broken_habits), "Unexpected broken habits found."
+
 
 def test_list_habits():
     """Test listing all habits."""

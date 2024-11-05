@@ -3,7 +3,8 @@ from example_data import add_example_habits  # Import the function for adding ex
 import os # used for checking if database file already exists
 
 # Default path for the main database
-DB_PATH = 'data.db'
+# Use 'data.db' as default or test.db for testing
+DB_PATH = 'test.db'
 
 ### database initialization incl. example data
 
