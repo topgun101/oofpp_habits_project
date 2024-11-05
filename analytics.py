@@ -99,11 +99,13 @@ def check_all_broken_habits():
                 else:
                     weeks_broken = days_or_weeks // 7
                     broken_habits.append(f"Habit '{habit_name}' (Weekly) is broken; last completed {weeks_broken} weeks ago.")
+
         else:
             # Mark habit as broken if there are no completions
             if periodicity == "daily":
                 broken_habits.append(f"Habit '{habit_name}' (Daily) has never been completed and is broken.")
             else:
                 broken_habits.append(f"Habit '{habit_name}' (Weekly) has never been completed and is broken.")
+
 
     return broken_habits

@@ -59,5 +59,5 @@ python main.py check-habits
 ## Test
 Run unit tests using pytest:
 ```shell
-pytest test_habit-tracker.py
+pytest test_habit_tracker.py
 ```

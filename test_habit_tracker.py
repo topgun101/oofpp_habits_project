@@ -11,46 +11,39 @@ TEST_DB_PATH = 'test.db'
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_test_database():
-    """Initializes the SQLite database for storing habits and adds example data if it's the first time running."""
-    db_exists = os.path.exists(TEST_DB_PATH)  # checks if database already exists or not
+    """
+    Initializes the SQLite test database with tables if it doesn't already exist.
+    Populates it with fixed example data.
+    """
+    db_exists = os.path.exists(TEST_DB_PATH)
 
     with sqlite3.connect(TEST_DB_PATH) as db:
+        # Create tables if they don't exist
         cursor = db.cursor()
         cursor.execute('''
-                CREATE TABLE IF NOT EXISTS habits (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    name TEXT NOT NULL,
-                    description TEXT,
-                    periodicity TEXT NOT NULL,
-                    created_at TEXT NOT NULL
-                )
-            ''')
+            CREATE TABLE IF NOT EXISTS habits (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                description TEXT,
+                periodicity TEXT NOT NULL,
+                created_at TEXT NOT NULL
+            )
+        ''')
         cursor.execute('''
-                CREATE TABLE IF NOT EXISTS completions (
-                    habit_id INTEGER,
-                    completed_at TEXT NOT NULL,
-                    FOREIGN KEY(habit_id) REFERENCES habits(id)
-                )
-            ''')
-    db.commit()
-
-    if not db_exists:
-        add_example_habits(db)
-        # Teardown: Remove test.db after all tests
-
-
-@pytest.fixture(scope="function", autouse=True)
-def reset_database():
-    """
-    Reset the database state before each test.
-    This ensures each test starts with the same data from example_data.py.
-    """
-    with sqlite3.connect(TEST_DB_PATH) as db:
-        # Clear tables and re-populate with initial example data
-        db.execute("DELETE FROM habits")
-        db.execute("DELETE FROM completions")
+            CREATE TABLE IF NOT EXISTS completions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                habit_id INTEGER,
+                completed_at TEXT NOT NULL,
+                FOREIGN KEY(habit_id) REFERENCES habits(id)
+            )
+        ''')
         db.commit()
-        add_example_habits(db)
+
+        # If the database is newly created, add example data
+        if not db_exists:
+            # Populate with example data using test data for consistent test results
+            add_example_habits(db, test_data=True)
+
 
 @pytest.fixture
 def habit_tracker():
@@ -118,7 +111,7 @@ def test_delete_habit(habit_tracker):
     habit_tracker.add_habit("Test Habit", "A test habit", "daily")
     habit_tracker.delete_habit("Test Habit")  # Delete the added habit
 
-    with sqlite3.connect(DB_PATH) as db:
+    with sqlite3.connect(TEST_DB_PATH) as db:
         cursor = db.cursor()
         cursor.execute("SELECT * FROM habits WHERE name = ?", ("Test Habit",))
         habit = cursor.fetchone()
@@ -133,39 +126,47 @@ def test_add_completion(completion_tracker):
         completion = cursor.fetchone()
     assert completion is not None, "Completion should have been recorded for 'Read Book'"
 
-def test_check_habits(capsys):
-    """Test checking for broken habits."""
-    # Assuming 'check_all_broken_habits' returns a list of broken habits
+
+def test_check_habits():
+    """Test checking for broken habits with fixed completion patterns."""
     broken_habits = check_all_broken_habits()
 
-    # Capture output and verify that broken habits are listed
-    captured = capsys.readouterr()
-    for habit_name, days in broken_habits:
-        assert f"Habit '{habit_name}' is broken" in captured.out
+    # Define the expected broken habit messages based on our fixed completion pattern
+    expected_broken_habits = [
+        "Habit 'Read Book' (Daily) is broken; last completed 7 days ago.",
+        "Habit 'Exercise' (Daily) is broken; last completed 7 days ago.",
+        "Habit 'Meditate' (Daily) is broken; last completed 7 days ago.",
+        "Habit 'Weekly Review' (Weekly) is broken; last completed 2 weeks ago.",
+        "Habit 'Clean House' (Weekly) is broken; last completed 2 weeks ago."
+    ]
 
-def test_list_habits(capsys):
+    # Check that each expected message appears in the actual broken habits
+    for expected_message in expected_broken_habits:
+        assert any(expected_message in habit for habit in
+                   broken_habits), f"Expected broken habit message not found: {expected_message}"
+
+    # Verify that there are no additional unexpected broken habits
+    assert len(broken_habits) == len(expected_broken_habits), "Unexpected broken habits found."
+
+def test_list_habits():
     """Test listing all habits."""
-    # Call list_habits (assuming it prints habit names)
-    get_all_habits()
-
-    # Capture printed output
-    captured = capsys.readouterr()
+    # Call get_all_habits and store its output directly
+    habits = get_all_habits()
 
     # Check if each example habit is listed
-    expected_habits = ["Exercise", "Read Book", "Meditate", "Write Journal", "Grocery Shopping"]
+    expected_habits = ["Read Book", "Exercise", "Meditate", "Clean House", "Weekly Review"]
     for habit in expected_habits:
-        assert habit in captured.out, f"Habit '{habit}' should be listed in output."
+        assert any(habit.startswith(habit_name.split(":")[0]) for habit_name in habits), f"Habit '{habit}' should be listed in output."
 
-def test_list_by_period(capsys):
+def test_list_by_period():
     """Test listing habits by periodicity."""
-    # List daily habits
-    get_habits_by_periodicity("daily")
-    captured_daily = capsys.readouterr()
+    # Get daily habits by periodicity
+    daily_habits = get_habits_by_periodicity("daily")
 
     # Verify that only daily habits are listed
-    daily_habits = ["Exercise", "Read Book", "Write Journal"]
-    for habit in daily_habits:
-        assert habit in captured_daily.out, f"Daily habit '{habit}' should be listed."
+    expected_daily_habits = ["Exercise", "Read Book", "Meditate"]
+    for habit in expected_daily_habits:
+        assert any(habit.startswith(habit_name.split(":")[0]) for habit_name in daily_habits), f"Daily habit '{habit}' should be listed."
 
 def test_longest_streak_for_specific_habit(habit_tracker, completion_tracker):
     """Test calculating the longest streak for a specific habit."""
