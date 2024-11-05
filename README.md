@@ -57,6 +57,9 @@ python main.py check-habits
 ```
 
 ## Test
+Before running the test command it is necessary to change the database path in the db.py from 
+DB_PATH = 'data.db' to DB_PATH = 'test.db' otherwise pytest will not work properly.
+
 Run unit tests using pytest:
 ```shell
 pytest test_habit_tracker.py

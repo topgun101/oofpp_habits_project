@@ -25,11 +25,10 @@ def get_longest_streak(habit_name=None):
     Calculate the longest streak of completions for a specific habit or all habits.
 
     :param habit_name: Optional name of a specific habit.
-    :return: Tuple (habit_name, longest_streak, period_type) for the longest streak.
+    :return: List of tuples [(habit_name, longest_streak, period_type)] for all habits with the longest streak.
     """
     longest_streak = 0
-    longest_habit_name = ""
-    periodicity_type = ""
+    longest_habits = []  # List to store all habits with the longest streak
 
     with sqlite3.connect(DB_PATH) as db:
         cursor = db.cursor()
@@ -40,7 +39,7 @@ def get_longest_streak(habit_name=None):
             habits = cursor.fetchall()
             if not habits:
                 print(f"Habit '{habit_name}' does not exist.")
-                return None, 0, ""
+                return []
         else:
             cursor.execute("SELECT id, name, periodicity FROM habits")
             habits = cursor.fetchall()
@@ -63,14 +62,14 @@ def get_longest_streak(habit_name=None):
 
                 last_completion_date = completed_date
 
-            # Update the longest streak for this habit if current streak is the longest
+            # Update longest_streak and longest_habits based on current_streak
             if current_streak > longest_streak:
                 longest_streak = current_streak
-                longest_habit_name = habit_name
-                periodicity_type = 'days' if periodicity == 'daily' else 'weeks'
+                longest_habits = [(habit_name, longest_streak, 'days' if periodicity == 'daily' else 'weeks')]
+            elif current_streak == longest_streak:
+                longest_habits.append((habit_name, current_streak, 'days' if periodicity == 'daily' else 'weeks'))
 
-    return longest_habit_name, longest_streak, periodicity_type
-
+    return longest_habits
 
 def check_all_broken_habits():
     """

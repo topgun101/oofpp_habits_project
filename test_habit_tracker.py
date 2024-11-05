@@ -138,14 +138,30 @@ def test_list_by_period():
 
 def test_longest_streak_for_specific_habit(habit_tracker, completion_tracker):
     """Test calculating the longest streak for a specific habit."""
-    habit, streak, period_type = get_longest_streak("Read Book")
-    assert habit == "Read Book", "The habit name should be 'Read Book'"
-    assert streak >= 1, "The streak for 'Read Book' should be at least 1 day"
-    assert period_type == "days", "The period type should be 'days' for a daily habit"
+    longest_streaks = get_longest_streak("Read Book")
+
+    # There should be at least one result
+    assert longest_streaks, "Expected at least one longest streak for 'Read Book'"
+
+    # Check each entry in the returned longest streaks list
+    for habit, streak, period_type in longest_streaks:
+        assert habit == "Read Book", "The habit name should be 'Read Book'"
+        assert streak >= 1, "The streak for 'Read Book' should be at least 1 day"
+        assert period_type == "days", "The period type should be 'days' for a daily habit"
 
 def test_longest_streak_across_all_habits(habit_tracker, completion_tracker):
     """Test calculating the longest streak across all habits."""
-    habit, streak, period_type = get_longest_streak()
-    assert habit in ["Read Book", "Exercise"], "The habit with the longest streak should be one of the tracked habits"
-    assert streak >= 1, "The longest streak should be at least 1"
-    assert period_type in ["days", "weeks"], "The period type should be either 'days' or 'weeks'"
+    longest_streaks = get_longest_streak()
+
+    # There should be at least one result
+    assert longest_streaks, "Expected at least one longest streak across all habits"
+
+    # Define a list of valid tracked habits
+    tracked_habits = ["Read Book", "Exercise", "Meditate", "Clean House", "Weekly Review"]
+
+    # Verify conditions for each habit with the longest streak
+    for habit, streak, period_type in longest_streaks:
+        assert habit in tracked_habits, \
+            f"The habit with the longest streak should be one of the tracked habits, found: '{habit}'"
+        assert streak >= 1, "The longest streak should be at least 1"
+        assert period_type in ["days", "weeks"], "The period type should be either 'days' or 'weeks'"

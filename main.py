@@ -77,10 +77,11 @@ def list_by_period(periodicity):
 @click.option('--habit-name', help="Name of the habit to check the longest streak for.")
 def longest_streak(habit_name):
     """Show the longest streak for a specific habit or all habits."""
-    habit, streak, period_type = get_longest_streak(habit_name)
+    longest_streaks = get_longest_streak(habit_name)
 
-    if streak > 0:
-        print(f"The longest streak for habit '{habit}' is {streak} {period_type}, without interruption.")
+    if longest_streaks:
+        for habit, streak, period_type in longest_streaks:
+            print(f"The longest streak for habit '{habit}' is {streak} {period_type}, without interruption.")
     else:
         if habit_name:
             print(f"No streak found for habit '{habit_name}'.")
