@@ -2,7 +2,7 @@ import sqlite3
 from example_data import add_example_habits  # Import the function for adding example data
 import os # used for checking if database file already exists
 
-# General database path is set here
+# Default path for the main database
 DB_PATH = 'data.db'
 
 ### database initialization incl. example data
