@@ -10,40 +10,38 @@ from analytics import get_longest_streak, get_all_habits, get_habits_by_periodic
 @pytest.fixture(scope="session", autouse=True) #Die Fixture ist so konfiguriert, dass sie einmal pro Testlauf automatisch vor allen Tests ausgeführt wird.
 def setup_test_database():
     """
-    Initializes the SQLite test database with tables if it doesn't already exist.
+    Deletes existing test.db and initializes a clean database with tables.
     Populates it with fixed test example data.
     """
     db_exists = os.path.exists(DB_PATH)
-    # Lösche die bestehende test.db, falls sie existiert
+    # remove existing test.db, if already existing
     if db_exists:
         os.remove('test.db')
 
-    # Erstelle die Datenbank neu und initialisiere sie
+    # initialise new fresh DB and add fixed example data
     with sqlite3.connect(DB_PATH) as db:
-        init_db()  # Tabellen in der Datenbank initialisieren
-        add_example_habits(db, test_data=True)  # Testdaten hinzufügen
-
-#    with sqlite3.connect(DB_PATH) as db:
-        # Create tables if they don't exist
-#        init_db()  # Initialize tables
-
-        # If the database is newly created, add example data
-#        if not db_exists:
-            # Populate with example data using test data for consistent test results
-#            add_example_habits(db, test_data=True)
-
+        init_db()  # initialise tables in the database
+        add_example_habits(db, test_data=True)  # add fixed example data via test_data=True
 
 @pytest.fixture
 def habit_tracker():
-    """Fixture to provide a Habit instance connected to the test database."""
+    """
+    Fixture to provide a Habit instance connected to the test database.
+
+    It minimizes redundant instantiation of Habit objects and
+    ensures consistency and avoids potential connection issues.
+    """
     return Habit(DB_PATH)
 
 @pytest.fixture
 def completion_tracker():
-    """Fixture to provide a Completion instance connected to the test database."""
-    return Completion(DB_PATH)
+    """
+    Fixture to provide a Completion instance connected to the test database.
 
-# Utility function to create tables
+    It minimizes redundant instantiation of Completion objects and
+    ensures consistency and avoids potential connection issues.
+    """
+    return Completion(DB_PATH)
 
 # Tests
 

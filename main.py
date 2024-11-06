@@ -1,5 +1,5 @@
 import click
-from db import init_db, DB_PATH  # Import the DB_PATH
+from db import init_db, DB_PATH  # Import the DB_PATH and initialze function for the DB
 from habit import Habit
 from completion import Completion
 from analytics import get_all_habits, get_habits_by_periodicity, get_longest_streak, check_all_broken_habits
@@ -8,8 +8,13 @@ from analytics import get_all_habits, get_habits_by_periodicity, get_longest_str
 habit = Habit(DB_PATH)
 completion = Completion(DB_PATH)
 
+class OrderedGroup(click.Group):
+    """A custom Group class to preserve command order in the menu."""
+    def list_commands(self, ctx):
+        return self.commands.keys()
 
-@click.group()
+# Initialize the CLI group with OrderedGroup
+@click.group(cls=OrderedGroup)
 def cli():
     """Habit Tracker CLI"""
     pass

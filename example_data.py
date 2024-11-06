@@ -43,7 +43,7 @@ def add_test_example_completions(db, habit_id, periodicity):
     today = (datetime.now() - timedelta(days=2)).date()  # Set the latest possible completion date to 2 days ago
 
     if periodicity == 'daily':
-        # Complete every day except certain days, and stop 2 days before today
+        # Complete every day except certain days
         for day in range(0, 28):
             completion_date = today - timedelta(days=day)
             if day not in {7, 14, 21}:  # Skip specific days to break the streak
@@ -101,7 +101,7 @@ def add_example_habits(db, test_data=False):
         habit_id = cursor.lastrowid
 
         # Add either test or standard completion data
-        if test_data:
+        if test_data: # test_data=True in the test_habit_tracker.py db initialisation to add the fixed test example data to the db.
             add_test_example_completions(db, habit_id, habit["periodicity"])
         else:
             add_example_completions(db, habit_id, habit["periodicity"])
