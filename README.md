@@ -1,17 +1,23 @@
 # Habit Tracker App
+Github: https://github.com/topgun101/oofpp_habits_project
 
-## 1. Features
+## 1. App Features
 
-- **Habit Management**: Add, update, and delete habits with descriptions, start and end dates.
-- **Frequency Management**: Set different frequencies for habits such as daily, weekly, etc.
-- **Check-Offs**: Mark habits as completed on specific dates.
-- **Analysis**: Analyze habits to find the longest streaks and categorize habits by frequency.
+- **Habit Management**: Add and delete habits with task descriptions and periodicity.
+- **Completion Tracking**: Mark habits as completed at the current date and time.
+- **Analysis**: Analyze habits to find longest streaks over all or specific habits, 
+overview of stored habits, filter the list by periods (daily or weekly habits) 
+and check for broken habits
+- **Testing**: Run automated test to check all functionalities easily
 
 ## 2. Installation
 
-1. Clone the repository.
-2. Ensure you have Python 3.7+ installed.
-3. Ensure you have SQLite3 installed.
+1. Ensure Python 3.7+ is installed. 
+2. Ensure SQLite3 is installed. 
+3. Clone the repository.
+```shell
+gh repo clone topgun101/oofpp_habits_project
+```
 4. Install dependencies:
 ```shell
 pip install -r requirements.txt

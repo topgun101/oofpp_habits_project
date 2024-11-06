@@ -9,14 +9,19 @@ habit = Habit(DB_PATH)
 completion = Completion(DB_PATH)
 
 class OrderedGroup(click.Group):
-    """A custom Group class to preserve command order in the menu."""
+    """
+    A custom Group class to preserve command order in the CLI menu.
+
+    Inherits from `click.Group` and overrides `list_commands` to
+    display commands in the order they were added to the CLI group.
+    """
     def list_commands(self, ctx):
         return self.commands.keys()
 
 # Initialize the CLI group with OrderedGroup
 @click.group(cls=OrderedGroup)
 def cli():
-    """Habit Tracker CLI"""
+    """Main entry point for the Habit Tracker CLI."""
     pass
 
 @cli.command()
@@ -25,11 +30,11 @@ def cli():
 @click.argument('periodicity')
 def add_habit(name, description, periodicity):
     """
-    Add a new habit.
+    Add a new habit to the tracker.
 
     :param name: The name of the habit.
-    :param description: A description of the habit.
-    :param periodicity: 'daily' or 'weekly'.
+    :param description: Optional. A brief description of the habit.
+    :param periodicity: Specifies the frequency of the habit ('daily' or 'weekly').
     """
     habit.add_habit(name, description, periodicity)
 
@@ -38,7 +43,7 @@ def add_habit(name, description, periodicity):
 @click.argument('name')
 def delete_habit(name):
     """
-    Delete an existing habit.
+    Deletes an existing habit from the DB.
 
     :param name: The name of the habit to delete.
     """
@@ -51,13 +56,17 @@ def complete_habit(name):
     """
     Mark a habit as completed.
 
-    :param name: The name of the habit to complete.
+    :param name: The name of the habit to mark as complete for the current date.
     """
     completion.add_completion(name)
 
 @cli.command()
 def list_habits():
-    """Lists all current habits."""
+    """
+    List all current habits being tracked.
+
+    Displays all tracked habits along with their descriptions.
+    """
     habits = get_all_habits()
     if habits:
         click.echo("Current Habits:")
@@ -69,7 +78,12 @@ def list_habits():
 @cli.command()
 @click.argument('periodicity')
 def list_by_period(periodicity):
-    """Lists habits with a specified periodicity."""
+    """
+    List habits by specified periodicity.
+
+    :param periodicity: The periodicity of habits to list ('daily' or 'weekly').
+    Displays habits with the given frequency.
+    """
     habits = get_habits_by_periodicity(periodicity)
     if habits:
         click.echo(f"Habits with {periodicity.capitalize()} periodicity:")
@@ -81,7 +95,12 @@ def list_by_period(periodicity):
 @cli.command()
 @click.option('--habit-name', help="Name of the habit to check the longest streak for.")
 def longest_streak(habit_name):
-    """Show the longest streak for a specific habit or all habits."""
+    """
+    Show the longest streak of completions for a specific habit or all habits.
+
+    :param habit_name: Optional. Name of a specific habit to display the longest streak for.
+                       If omitted, shows the longest streak across all habits.
+    """
     longest_streaks = get_longest_streak(habit_name)
 
     if longest_streaks:
@@ -95,7 +114,11 @@ def longest_streak(habit_name):
 
 @cli.command()
 def check_habits():
-    """Check if any habits are broken."""
+    """
+    Check if any habits are currently broken (missed the required periodic completion).
+
+    Displays a message for each broken habit, showing the time since it was last completed.
+    """
     broken_habits = check_all_broken_habits()
 
     if broken_habits:

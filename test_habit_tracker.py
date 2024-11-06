@@ -7,11 +7,15 @@ from habit import Habit
 from completion import Completion
 from analytics import get_longest_streak, get_all_habits, get_habits_by_periodicity, check_all_broken_habits
 
-@pytest.fixture(scope="session", autouse=True) #Die Fixture ist so konfiguriert, dass sie einmal pro Testlauf automatisch vor allen Tests ausgeführt wird.
+@pytest.fixture(scope="session", autouse=True) # The fixture is configured to be executed automatically once per test run before all tests.
 def setup_test_database():
     """
-    Deletes existing test.db and initializes a clean database with tables.
-    Populates it with fixed test example data.
+    Sets up a clean test database by deleting any existing `test.db` file,
+    initializing new tables, and populating it with fixed test data.
+
+    Ensures that each test run starts with the same database state.
+
+    - DB_PATH: Path to the test database file.
     """
     db_exists = os.path.exists(DB_PATH)
     # remove existing test.db, if already existing
@@ -27,9 +31,11 @@ def setup_test_database():
 def habit_tracker():
     """
     Fixture to provide a Habit instance connected to the test database.
+    (It minimizes redundant instantiation of Habit objects and
+    ensures consistency and avoids potential connection issues.)
 
-    It minimizes redundant instantiation of Habit objects and
-    ensures consistency and avoids potential connection issues.
+    Returns:
+        Habit: An instance of the Habit class initialized with the test database path.
     """
     return Habit(DB_PATH)
 
@@ -37,16 +43,23 @@ def habit_tracker():
 def completion_tracker():
     """
     Fixture to provide a Completion instance connected to the test database.
+    (It minimizes redundant instantiation of Completion objects and
+    ensures consistency and avoids potential connection issues.)
 
-    It minimizes redundant instantiation of Completion objects and
-    ensures consistency and avoids potential connection issues.
+    Returns:
+        Completion: An instance of the Completion class initialized with the test database path.
     """
     return Completion(DB_PATH)
 
 # Tests
 
 def test_add_habit(habit_tracker):
-    """Test adding a new habit."""
+    """
+    Tests adding a new habit to the database and verifies its existence.
+
+    Parameters:
+        habit_tracker (Habit): An instance of the Habit class.
+    """
     habit_tracker.add_habit("Test Habit", "A test habit", "daily")
     with sqlite3.connect(DB_PATH) as db:
         cursor = db.cursor()
@@ -56,8 +69,12 @@ def test_add_habit(habit_tracker):
 
 def test_prevent_duplicate_habit(habit_tracker, capsys):
     """
-    Test preventing duplicate habit entries.
-    Verifies that adding a habit with the same name does not insert a duplicate.
+    Tests duplicate habit prevention by verifying that adding a habit
+    with an existing name does not insert a duplicate.
+
+    Parameters:
+        habit_tracker (Habit): An instance of the Habit class.
+        capsys (pytest fixture): Captures stdout/stderr during test.
     """
     # Add the habit once
     habit_tracker.add_habit("Read Book", "Read at least one chapter", "daily")
@@ -72,7 +89,12 @@ def test_prevent_duplicate_habit(habit_tracker, capsys):
     assert "Habit 'Read Book' already exists." in captured.out
 
 def test_delete_habit(habit_tracker):
-    """Test deleting a habit."""
+    """
+    Tests deleting a habit and verifies it no longer exists in the database.
+
+    Parameters:
+        habit_tracker (Habit): An instance of the Habit class.
+    """
     habit_tracker.add_habit("Test Habit", "A test habit", "daily")
     habit_tracker.delete_habit("Test Habit")  # Delete the added habit
 
@@ -83,7 +105,12 @@ def test_delete_habit(habit_tracker):
     assert habit is None, "Habit 'Test Habit' should have been deleted."
 
 def test_add_completion(completion_tracker):
-    """Test adding a completion to a habit."""
+    """
+    Tests adding a completion record for a habit and verifies its existence.
+
+    Parameters:
+        completion_tracker (Completion): An instance of the Completion class.
+    """
     completion_tracker.add_completion("Read Book")
     with sqlite3.connect(DB_PATH) as db:
         cursor = db.cursor()
@@ -93,7 +120,13 @@ def test_add_completion(completion_tracker):
 
 
 def test_check_habits():
-    """Test checking for broken habits with fixed completion patterns."""
+    """
+    Tests checking for broken habits by verifying the output matches
+    expected patterns based on fixed completion data.
+
+    Expected Output:
+        - A list of messages identifying specific broken habits.
+    """
     broken_habits = check_all_broken_habits()
 
     # Define expected broken habit messages based on the test completion data
@@ -115,7 +148,12 @@ def test_check_habits():
 
 
 def test_list_habits():
-    """Test listing all habits."""
+    """
+    Tests listing all habits to verify that each example habit is correctly listed.
+
+    Expected Output:
+        - A list of habit names that should include specific test data.
+    """
     # Call get_all_habits and store its output directly
     habits = get_all_habits()
 
@@ -125,7 +163,13 @@ def test_list_habits():
         assert any(habit.startswith(habit_name.split(":")[0]) for habit_name in habits), f"Habit '{habit}' should be listed in output."
 
 def test_list_by_period():
-    """Test listing habits by periodicity."""
+    """
+    Tests listing habits by their periodicity and verifies that only
+    habits with the specified periodicity are listed.
+
+    Expected Output:
+        - A list of habits with "daily" periodicity.
+    """
     # Get daily habits by periodicity
     daily_habits = get_habits_by_periodicity("daily")
 
@@ -135,7 +179,16 @@ def test_list_by_period():
         assert any(habit.startswith(habit_name.split(":")[0]) for habit_name in daily_habits), f"Daily habit '{habit}' should be listed."
 
 def test_longest_streak_for_specific_habit(habit_tracker, completion_tracker):
-    """Test calculating the longest streak for a specific habit."""
+    """
+    Tests calculating the longest streak for a specific habit.
+
+    Parameters:
+        habit_tracker (Habit): An instance of the Habit class.
+        completion_tracker (Completion): An instance of the Completion class.
+
+    Expected Output:
+        - A streak result for the specified habit "Read Book".
+    """
     longest_streaks = get_longest_streak("Read Book")
 
     # There should be at least one result
@@ -148,7 +201,16 @@ def test_longest_streak_for_specific_habit(habit_tracker, completion_tracker):
         assert period_type == "days", "The period type should be 'days' for a daily habit"
 
 def test_longest_streak_across_all_habits(habit_tracker, completion_tracker):
-    """Test calculating the longest streak across all habits."""
+    """
+    Tests calculating the longest streak across all tracked habits.
+
+    Parameters:
+        habit_tracker (Habit): An instance of the Habit class.
+        completion_tracker (Completion): An instance of the Completion class.
+
+    Expected Output:
+        - A list of longest streaks for all tracked habits.
+    """
     longest_streaks = get_longest_streak()
 
     # There should be at least one result

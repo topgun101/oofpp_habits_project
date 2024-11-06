@@ -6,14 +6,23 @@ from db import DB_PATH  # Import the DB_PATH
 completion_tracker = Completion(DB_PATH)  # Create instance of Completion
 
 def get_all_habits():
-    """Returns a list of all tracked habits with their descriptions."""
+    """
+    Retrieve a list of all habits with their descriptions.
+
+    :return: List of strings in the format "<habit_name>: <description>" for each habit.
+    """
     with sqlite3.connect(DB_PATH) as db:
         cursor = db.cursor()
         cursor.execute('SELECT name, description FROM habits')
         return [f"{row[0]}: {row[1]}" for row in cursor.fetchall()]
 
 def get_habits_by_periodicity(periodicity: str):
-    """Returns a list of habits with the specified periodicity, including their descriptions."""
+    """
+    Retrieve a list of habits with a specified periodicity, including their descriptions.
+
+    :param periodicity: The periodicity of the habits to retrieve ("daily" or "weekly").
+    :return: List of strings in the format "<habit_name>: <description>" for each habit with the specified periodicity.
+    """
     with sqlite3.connect(DB_PATH) as db:
         cursor = db.cursor()
         cursor.execute('SELECT name, description FROM habits WHERE periodicity = ?', (periodicity,))
@@ -22,10 +31,12 @@ def get_habits_by_periodicity(periodicity: str):
 
 def get_longest_streak(habit_name=None):
     """
-    Calculate the longest streak of completions for a specific habit or all habits.
+    Calculate the longest streak of completions for a specific habit or across all habits.
 
-    :param habit_name: Optional name of a specific habit.
-    :return: List of tuples [(habit_name, longest_streak, period_type)] for all habits with the longest streak.
+    :param habit_name: Optional; if provided, calculate the longest streak for this specific habit.
+                       If not provided, calculates the longest streak across all habits.
+    :return: List of tuples in the format [(habit_name, longest_streak, period_type)].
+             period_type is "days" for daily habits and "weeks" for weekly habits.
     """
     longest_streak = 0
     longest_habits = []  # List to store all habits with the longest streak
@@ -73,7 +84,10 @@ def get_longest_streak(habit_name=None):
 
 def check_all_broken_habits():
     """
-    Check if each habit has been completed within the expected period.
+    Check all tracked habits to identify any broken habits, those not completed within their required periodicity.
+
+    :return: List of strings describing broken habits, including their names, periodicity, and how long ago they were last completed.
+             If a habit has never been completed, it is also marked as broken.
     """
     broken_habits = []  # Clear the list at the start to avoid duplicates
     today = datetime.now().date()

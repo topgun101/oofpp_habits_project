@@ -5,8 +5,13 @@ def add_example_completions(db, habit_id, periodicity):
     """
     Adds random completion data for a habit over a period of 4 weeks.
 
-    For daily habits, randomly add completions for most days.
-    For weekly habits, randomly add completions once per week or skip some weeks.
+    For daily habits, randomly adds completions for most days.
+    For weekly habits, randomly adds completions once per week or skips some weeks.
+
+    Parameters:
+    - db (sqlite3.Connection): The database connection.
+    - habit_id (int): The unique ID of the habit for which completions are being added.
+    - periodicity (str): The frequency of the habit, either 'daily' or 'weekly'.
     """
     cursor = db.cursor()
     today = datetime.now()
@@ -34,10 +39,16 @@ def add_example_completions(db, habit_id, periodicity):
 
 def add_test_example_completions(db, habit_id, periodicity):
     """
-    Adds completion data for a habit over a period with fixed dates.
+    Adds fixed completion data for a habit over a period with specific missed days
+    to simulate broken streaks.
 
-    For daily habits, completes each day except specific days to simulate missed completions.
-    For weekly habits, completes every other week, leaving a 2-week gap to mark as broken.
+    For daily habits, completions are added each day except specific days to simulate missed completions.
+    For weekly habits, completions are added every other week to create gaps.
+
+    Parameters:
+    - db (sqlite3.Connection): The database connection.
+    - habit_id (int): The unique ID of the habit for which completions are being added.
+    - periodicity (str): The frequency of the habit, either 'daily' or 'weekly'.
     """
     cursor = db.cursor()
     today = (datetime.now() - timedelta(days=2)).date()  # Set the latest possible completion date to 2 days ago
@@ -62,7 +73,16 @@ def add_test_example_completions(db, habit_id, periodicity):
             )
 
 def add_example_habits(db, test_data=False):
-    """Adds 5 predefined example habits and related completion data."""
+    """
+    Adds a set of 5 predefined example habits to the database along with their related
+    completion data.
+
+    Parameters:
+    - db (sqlite3.Connection): The database connection.
+    - test_data (bool): When True, adds fixed test data using `add_test_example_completions`
+      to ensure predictable completion patterns. When False, uses `add_example_completions`
+      to add random completion patterns.
+    """
     habits = [
         {
             "name": "Read Book",

@@ -11,7 +11,6 @@ class Habit:
     periodicity (str): The periodicity of the habit, either 'daily' or 'weekly'.
     description (str): A description of the habit.
     created_at (datetime): The creation date of the habit.
-    completed_dates (list): List of datetime objects representing when the habit was completed.
     """
 
     def __init__(self, db_path=DB_PATH):
